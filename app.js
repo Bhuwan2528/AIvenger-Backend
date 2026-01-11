@@ -12,7 +12,7 @@ const app = express();
    MIDDLEWARE
 ===================== */
 app.use(cors({
-  origin: "https://aivenger.vercel.app/",
+  origin: "https://aivenger.vercel.app",
   credentials: true,
 }));
 app.use(express.json());
