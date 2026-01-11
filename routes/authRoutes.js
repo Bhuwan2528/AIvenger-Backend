@@ -9,7 +9,6 @@ const router = express.Router();
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
-  // Static admin check
   if (
     email !== process.env.ADMIN_EMAIL ||
     password !== process.env.ADMIN_PASSWORD
@@ -17,18 +16,18 @@ router.post("/login", (req, res) => {
     return res.status(401).json({ message: "Invalid email or password" });
   }
 
-  // Create token
   const token = jwt.sign(
     { role: "admin" },
     process.env.JWT_SECRET,
     { expiresIn: "1d" }
   );
 
-  // Save token in cookie
+  const isProduction = process.env.NODE_ENV === "production";
+
   res.cookie("adminToken", token, {
     httpOnly: true,
-    sameSite: "strict",
-    secure: false, // production me true
+    secure: isProduction,                 // 🔥 HTTPS only in prod
+    sameSite: isProduction ? "None" : "Lax", // 🔥 cross-site allow
     maxAge: 24 * 60 * 60 * 1000,
   });
 
@@ -39,7 +38,14 @@ router.post("/login", (req, res) => {
    LOGOUT ROUTE
 ============================ */
 router.post("/logout", (req, res) => {
-  res.clearCookie("adminToken");
+  const isProduction = process.env.NODE_ENV === "production";
+
+  res.clearCookie("adminToken", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
+  });
+
   res.json({ success: true, message: "Logged out successfully" });
 });
 
@@ -62,7 +68,7 @@ const adminAuth = (req, res, next) => {
 };
 
 /* ============================
-   PROTECTED ROUTE (TEST)
+   PROTECTED ROUTE
 ============================ */
 router.get("/check", adminAuth, (req, res) => {
   res.json({ success: true, message: "Admin authenticated" });
